@@ -1,0 +1,17 @@
+---
+title: "DSPM Assignment 05"
+author: "Jan Jacobsen"
+date: "1/11/2022"
+output: html_document
+---
+
+
+```{r setup}
+# set default options for code chunks
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+# clear workspace
+rm(list = ls()) 
+
+```
+
