@@ -32,7 +32,42 @@ source("api_key_storage.r")
 # imports
 if (!require("tidyverse")) install.packages("tidyverse")
 if (!require("jsonlite")) install.packages("jsonlite")
+if (!require("httr")) install.packages("httr")
 library(tidyverse)
 library(jsonlite)
+library(httr)
+```
+
+
+
+```{r api_basics}
+# retrieve german venue data (without specifiying page)
+response_1_raw <- 
+  GET(
+    url = "https://app.ticketmaster.com/discovery/v2/venues?",
+    query = list(countryCode = "DE",
+              locale = "*",
+              apikey = api_key)
+  )
+       
+# get R list from response content json
+response_1 <- jsonlite::fromJSON(content(response_1_raw, as = "text"))
+
+# extract venue data from response
+df <- response_1[["_embedded"]][["venues"]]
+
+# build dataframe with required variables from retrieved data
+venue_df_1 <- data.frame(
+                name = df$name,
+                city = df$city$name, 
+                postalCode = df$postalCode,
+                address = df$address$line1,
+                url = df$url,
+                long = as.double(df$location$longitude),
+                lat = as.double(df$location$latitude),
+                stringsAsFactors = FALSE
+                )
+
+glimpse(venue_df_1)
 ```
 
