@@ -28,3 +28,11 @@ source("api_key_storage.r")
 ```
 
 
+```{r}
+# imports
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("jsonlite")) install.packages("jsonlite")
+library(tidyverse)
+library(jsonlite)
+```
+
