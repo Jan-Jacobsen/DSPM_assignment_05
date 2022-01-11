@@ -12,8 +12,19 @@ output:
 # set default options for code chunks
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
+# set working directory
+my_path <- r"{E:\R\DSPM_Assignment_05\}"
+knitr::opts_knit$set(root.dir = my_path)
+
 # clear workspace
 rm(list = ls())
 
+
+# include api storage file 
+source("api_key_storage.r") 
+
+# if you are not the creator: set your own API key instead using the following line
+# api_key <- "your key"
 ```
+
 
