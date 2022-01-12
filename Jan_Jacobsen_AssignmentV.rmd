@@ -72,6 +72,9 @@ glimpse(venue_df_1)
 ```
 
 ```{r api_advanced}
+#get number of elements (to check later)
+total_elements <- response_1$page$totalElements
+
 # get number of pages to loop through (should be 629)
 total_pages <- response_1$page$totalPages
 
@@ -79,7 +82,7 @@ total_pages <- response_1$page$totalPages
 start_page <- 0
 
 # define dataframe to contain the entire dataset (same structure as in previous task)
-df_venue_data2 <- 
+df_venue_data_2 <- 
   data.frame(
     name = character(),
     city = character(),
@@ -111,19 +114,22 @@ response_2 <- jsonlite::fromJSON(content(response_2_raw, as = "text"))
 df <- response_2[["_embedded"]][["venues"]]
 
 # build (interim) df with required variables from retrieved data
-single_page_df <- data.frame(
-                    name = df$name,
-                    city = df$city$name, 
-                    postalCode = df$postalCode,
-                    address = df$address$line1,
-                    url = df$url,
-                    long = as.double(df$location$longitude),
-                    lat = as.double(df$location$latitude),
+# note: if every single row in the current page is missing a certain variable, 
+#       the response object does not include this column. 
+#       ifelse() clauses are used to handle these cases.
+df_single_page <- data.frame(
+                    name = (if ("name" %in% names(df)) {df$name} else {NA}),
+                    city = (if ("city" %in% names(df)) {df$city$name} else {NA}),
+                    postalCode = (if ("postalCode" %in% names(df)) {df$postalCode} else {NA}),
+                    address = (if ("address" %in% names(df)) {df$address$line1} else {NA}),
+                    url = (if ("url" %in% names(df)) {df$url} else {NA}),
+                    long = (if ("location" %in% names(df)) {as.double(df$location$longitude)} else {NA}),
+                    lat = (if ("location" %in% names(df)) {as.double(df$location$latitude)} else {NA}),
                     stringsAsFactors = FALSE
                   )
 
 # append to main df
-df_venue_data2 <- df_venue_data2 %>% bind_rows(single_page_df)
+df_venue_data_2 <- df_venue_data_2 %>% bind_rows(df_single_page)
 
 # delay to comply with API restrictions 
 # minimum 0.2 seconds between requests is required according to ticketmaster, 
@@ -134,6 +140,13 @@ Sys.sleep(0.5)
 # print progress to console
 print(paste0("page ", as.character(p), " data retrieved"))
 }
+
+
+# check if all observations were retrieved
+print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
+print(paste0("Rows in retrieved dataframe": as.character(nrow(df_venue_data2))))
+
+glimpse(df_venue_data_2)
 
 ```
 
