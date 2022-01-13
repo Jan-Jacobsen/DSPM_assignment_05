@@ -144,7 +144,7 @@ print(paste0("page ", as.character(p), " data retrieved"))
 
 # check if all observations were retrieved
 print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
-print(paste0("Rows in retrieved dataframe": as.character(nrow(df_venue_data2))))
+print(paste0("Rows in retrieved dataframe: ", as.character(nrow(df_venue_data_2))))
 
 glimpse(df_venue_data_2)
 
