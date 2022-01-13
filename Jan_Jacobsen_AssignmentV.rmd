@@ -33,9 +33,12 @@ source("api_key_storage.r")
 if (!require("tidyverse")) install.packages("tidyverse")
 if (!require("jsonlite")) install.packages("jsonlite")
 if (!require("httr")) install.packages("httr")
+if (!require("ggplot2")) install.packages("ggplot2")
+
 library(tidyverse)
 library(jsonlite)
 library(httr)
+library(ggplot2)
 ```
 
 
@@ -148,5 +151,28 @@ print(paste0("Rows in retrieved dataframe: ", as.character(nrow(df_venue_data_2)
 
 glimpse(df_venue_data_2)
 
+```
+
+```{r}
+# define country name (for ggplot "world" map data set)
+country_name = "Germany"
+
+# define longitude and latitude boundaries for the country
+min_long <- 5.866944
+max_long <- 15.043611
+min_lat <- 47.271679
+max_lat <- 55.0846
+
+# visualization (code given in assignment + adjustments)
+ggplot() +
+  geom_polygon(
+    aes(x = long, y = lat, group = group), 
+    data = map_data("world", region = "Germany"),
+    fill = "grey90",color = "black") +
+  theme_void() + 
+  coord_quickmap() +
+  labs(title = "Event locations across Germany", caption = "Source: ticketmaster.com") +
+  theme(title = element_text(size=8, face='bold'),
+  plot.caption = element_text(face = "italic"))
 ```
 
