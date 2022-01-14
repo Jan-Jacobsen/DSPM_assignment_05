@@ -48,7 +48,7 @@ library(maps)
 
 ```{r api_basics}
 # retrieve german venue data (without specifiying page)
-response_1_raw <- 
+response_raw <- 
   GET(
     url = "https://app.ticketmaster.com/discovery/v2/venues?",
     query = list(countryCode = "DE",
@@ -57,13 +57,13 @@ response_1_raw <-
   )
        
 # get R list from response content json
-response_1 <- jsonlite::fromJSON(content(response_1_raw, as = "text"))
+response <- jsonlite::fromJSON(content(response_raw, as = "text"))
 
 # extract venue data from response
-df <- response_1[["_embedded"]][["venues"]]
+df <- response[["_embedded"]][["venues"]]
 
 # build dataframe with required variables from retrieved data
-venue_df_1 <- data.frame(
+venue_data <- data.frame(
                 name = df$name,
                 city = df$city$name, 
                 postalCode = df$postalCode,
@@ -74,21 +74,21 @@ venue_df_1 <- data.frame(
                 stringsAsFactors = FALSE
                 )
 
-glimpse(venue_df_1)
+glimpse(venue_data)
 ```
 
 ```{r api_advanced}
 #get number of elements (to check later)
-total_elements <- response_1$page$totalElements
+total_elements <- response$page$totalElements
 
 # get number of pages to loop through (should be 629)
-total_pages <- response_1$page$totalPages
+total_pages <- response$page$totalPages
 
 # pages start at zero
 start_page <- 0
 
 # define dataframe to contain the entire dataset (same structure as in previous task)
-df_venue_data_2 <- 
+venue_data_1 <- 
   data.frame(
     name = character(),
     city = character(),
@@ -102,57 +102,57 @@ df_venue_data_2 <-
 
 # loop through pages
 for (p in start_page:(total_pages-1)){
+    
+  # retrieve german venue data (without specifiying page)
+  response_1_raw <- 
+    GET(
+      url = "https://app.ticketmaster.com/discovery/v2/venues?",
+      query = list(countryCode = "DE",
+                locale = "*",
+                page = as.character(p), # current page
+                apikey = api_key)
+    )
+         
+  # get R list from response content json
+  response_1 <- jsonlite::fromJSON(content(response_1_raw, as = "text"))
   
-# retrieve german venue data (without specifiying page)
-response_2_raw <- 
-  GET(
-    url = "https://app.ticketmaster.com/discovery/v2/venues?",
-    query = list(countryCode = "DE",
-              locale = "*",
-              page = as.character(p), # current page
-              apikey = api_key)
-  )
-       
-# get R list from response content json
-response_2 <- jsonlite::fromJSON(content(response_2_raw, as = "text"))
-
-# extract venue data from response
-df <- response_2[["_embedded"]][["venues"]]
-
-# build (interim) df with required variables from retrieved data
-# note: if every single row in the current page is missing a certain variable, 
-#       the response object does not include this column. 
-#       ifelse() clauses are used to handle these cases.
-df_single_page <- data.frame(
-                    name = (if ("name" %in% names(df)) {df$name} else {NA}),
-                    city = (if ("city" %in% names(df)) {df$city$name} else {NA}),
-                    postalCode = (if ("postalCode" %in% names(df)) {df$postalCode} else {NA}),
-                    address = (if ("address" %in% names(df)) {df$address$line1} else {NA}),
-                    url = (if ("url" %in% names(df)) {df$url} else {NA}),
-                    long = (if ("location" %in% names(df)) {as.double(df$location$longitude)} else {NA}),
-                    lat = (if ("location" %in% names(df)) {as.double(df$location$latitude)} else {NA}),
-                    stringsAsFactors = FALSE
-                  )
-
-# append to main df
-df_venue_data_2 <- df_venue_data_2 %>% bind_rows(df_single_page)
-
-# delay to comply with API restrictions 
-# minimum 0.2 seconds between requests is required according to ticketmaster, 
-# but values slightly above this limit seem to get throttled anyways before all 
-# pages are finished. The exact restriction policy is unclear.)
-Sys.sleep(0.5) 
-
-# print progress to console
-print(paste0("page ", as.character(p), " data retrieved"))
+  # extract venue data from response 
+  df <- response_1[["_embedded"]][["venues"]]
+  
+  # build (interim) df with required variables from retrieved data
+  # note: if every single row in the current page is missing a certain variable, 
+  #       the response object does not include this column. 
+  #       ifelse() clauses are used to handle these cases.
+  df_single_page <- data.frame(
+                      name = (if ("name" %in% names(df)) {df$name} else {NA}),
+                      city = (if ("city" %in% names(df)) {df$city$name} else {NA}),
+                      postalCode = (if ("postalCode" %in% names(df)) {df$postalCode} else {NA}),
+                      address = (if ("address" %in% names(df)) {df$address$line1} else {NA}),
+                      url = (if ("url" %in% names(df)) {df$url} else {NA}),
+                      long = (if ("location" %in% names(df)) {as.double(df$location$longitude)} else {NA}),
+                      lat = (if ("location" %in% names(df)) {as.double(df$location$latitude)} else {NA}),
+                      stringsAsFactors = FALSE
+                    )
+  
+  # append to main df
+  venue_data_1 <- venue_data_1 %>% bind_rows(df_single_page)
+  
+  # delay to comply with API restrictions 
+  # minimum 0.2 seconds between requests is required according to ticketmaster, 
+  # but values slightly above this limit seem to get throttled anyways before all 
+  # pages are finished. The exact restriction policy is unclear.
+  Sys.sleep(0.5) 
+  
+  # print progress to console
+  print(paste0("page ", as.character(p), " data retrieved"))
 }
 
 
 # check if all observations were retrieved
 print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
-print(paste0("Rows in retrieved dataframe: ", as.character(nrow(df_venue_data_2))))
+print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_1))))
 
-glimpse(df_venue_data_2)
+glimpse(venue_data_1)
 
 ```
 
@@ -168,14 +168,166 @@ max_long <- 15.043611
 min_lat <- 47.271679
 max_lat <- 55.0846
 
-# visualization (code given in assignment + adjustments)
+# set coordinates outside the boundaries to NA
+venue_data_1 <- 
+  venue_data_1 %>%  # transform longitude column
+    mutate(long = ifelse(long > max_long | long < min_long | is.na(lat) |
+                  lat > max_lat | lat < min_lat, NA, long)
+    ) %>% # transform latitude column
+    mutate(lat = ifelse(lat > max_lat | lat < min_lat | is.na(long), NA, lat))
+
+# visualization (adjusted code template from assignment)
 ggplot() +
-  geom_polygon(
-    aes(x = long, y = lat, group = group), 
+  # country map
+  geom_polygon(aes(x = long, y = lat, group = group), 
     data = map_data("world", region = country_name),
     fill = "grey90",color = "black") +
   theme_void() + 
+  # event location points
+  geom_point(aes(x = long, y = lat),
+    data = venue_data_1, color = "purple", size = 0.5) +
+  # projection
   coord_quickmap() +
+  # design & descriptions
+  labs(title = paste0("Event locations across ", country_name), caption = "Source: ticketmaster.com") +
+  theme(title = element_text(size=8, face='bold'),
+    plot.caption = element_text(face = "italic"))
+```
+
+
+
+```{r echo = FALSE}
+# repeat data gathering process for second country: Switzerland
+
+# define country code for ticketmaster API
+country_code = "CH" 
+
+# retrieve single page first to get information about the total number of pages
+# retrieve german venue data (without specifiying page)
+response_2_raw <- 
+  GET(
+    url = "https://app.ticketmaster.com/discovery/v2/venues?",
+    query = list(countryCode = country_code,
+              locale = "*",
+              apikey = api_key)
+  )
+       
+# get R list from response content json
+response_2 <- jsonlite::fromJSON(content(response_2_raw, as = "text"))
+
+#get number of elements (to check later)
+total_elements <- response_2$page$totalElements
+
+# get number of pages to loop through (should be 629)
+total_pages <- response_2$page$totalPages
+
+# pages start at zero
+start_page <- 0
+
+# define dataframe to contain the entire dataset
+venue_data_2 <- 
+  data.frame(
+    name = character(),
+    city = character(),
+    postalCode = character(),
+    address = character(),
+    url = character(),
+    long = double(),
+    lat = double(),
+    stringsAsFactors = FALSE
+)
+
+# start full data retrieval
+
+# loop through pages
+for (p in start_page:(total_pages-1)){
+    
+  # retrieve german venue data (without specifiying page)
+  response_2_raw <- 
+    GET(
+      url = "https://app.ticketmaster.com/discovery/v2/venues?",
+      query = list(countryCode = country_code,
+                locale = "*",
+                page = as.character(p), # current page
+                apikey = api_key)
+    )
+         
+  # get R list from response content json
+  response_2 <- jsonlite::fromJSON(content(response_2_raw, as = "text"))
+  
+  # extract venue data from response
+  df <- response_2[["_embedded"]][["venues"]]
+  
+  # build (interim) df with required variables from retrieved data
+  # note: if every single row in the current page is missing a certain variable, 
+  #       the response object does not include this column. 
+  #       ifelse() clauses are used to handle these cases.
+  df_single_page <- data.frame(
+                      name = (if ("name" %in% names(df)) {df$name} else {NA}),
+                      city = (if ("city" %in% names(df)) {df$city$name} else {NA}),
+                      postalCode = (if ("postalCode" %in% names(df)) {df$postalCode} else {NA}),
+                      address = (if ("address" %in% names(df)) {df$address$line1} else {NA}),
+                      url = (if ("url" %in% names(df)) {df$url} else {NA}),
+                      long = (if ("location" %in% names(df)) {as.double(df$location$longitude)} else {NA}),
+                      lat = (if ("location" %in% names(df)) {as.double(df$location$latitude)} else {NA}),
+                      stringsAsFactors = FALSE
+                    )
+  
+  # append to main df
+  venue_data_2 <- venue_data_2 %>% bind_rows(df_single_page)
+  
+  # delay to comply with API restrictions 
+  # minimum 0.2 seconds between requests is required according to ticketmaster, 
+  # but values slightly above this limit seem to get throttled anyways before all 
+  # pages are finished. The exact restriction policy is unclear.
+  Sys.sleep(0.5) 
+  
+  # print progress to console
+  print(paste0("page ", as.character(p), " data retrieved"))
+  
+}
+
+# check if all observations were retrieved
+print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
+print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_2))))
+
+glimpse(venue_data_2)
+```
+
+```{r echo = FALSE}
+# Data cleaning & visualization for second country: Switzerland
+
+# define country name (for ggplot "world" map data set)
+country_name = "Switzerland"
+
+# define longitude and latitude boundaries for the country
+# (source: https://en.wikipedia.org/wiki/List_of_extreme_points_of_Switzerland)
+min_long <- 5.956303
+max_long <- 10.491944
+min_lat <- 45.818031
+max_lat <- 47.808264
+
+# set coordinates outside the boundaries to NA
+venue_data_2 <- 
+  venue_data_2 %>%  # transform longitude column
+    mutate(long = ifelse(long > max_long | long < min_long | is.na(lat) |
+                  lat > max_lat | lat < min_lat, NA, long)
+    ) %>% # transform latitude column
+    mutate(lat = ifelse(lat > max_lat | lat < min_lat | is.na(long), NA, lat))
+
+# visualization (adjusted code template from assignment)
+ggplot() +
+  # country map
+  geom_polygon(aes(x = long, y = lat, group = group), 
+    data = map_data("world", region = country_name),
+    fill = "grey90",color = "black") +
+  theme_void() + 
+  # event location points
+  geom_point(aes(x = long, y = lat),
+    data = venue_data_2, color = "blue", size = 1) +
+  # projection
+  coord_quickmap() +
+  # design & descriptions
   labs(title = paste0("Event locations across ", country_name), caption = "Source: ticketmaster.com") +
   theme(title = element_text(size=8, face='bold'),
     plot.caption = element_text(face = "italic"))
