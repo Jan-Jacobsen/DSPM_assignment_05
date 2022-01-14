@@ -156,6 +156,8 @@ glimpse(df_venue_data_2)
 
 ```
 
+
+
 ```{r}
 # define country name (for ggplot "world" map data set)
 country_name = "Germany"
