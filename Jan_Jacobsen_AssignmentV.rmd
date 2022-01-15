@@ -98,6 +98,7 @@ In order to retrieve the entire venue data set for a given country, every single
 The data frame ``venue_data_1`` is appended repeatedly with the data of a new page until the full data set is retrieved. An issue with the API is that the structure of the response object can change based on the results. Specifically, if all 20 observations of the page have missing values in the same column (e.g. sometimes the case for latitude and longitude), the response object does not seem to include the variable at all. This needs to be taken into account when extracting the relevant data from the API response. 
 
 Ticketmaster states on their website that the free API key is valid for up to 5 requests per second. There do seem to be additional traffic surge restrictions though which can sometimes cause a "SpikeArrestViolation" error to be returned. To reliably avoid this, I set the interval between requests comfortably above the limit at 0.5s.
+
 ```{r api_advanced}
 # define country code for ticketmaster API
 country_code = "DE" 
@@ -176,13 +177,7 @@ glimpse(venue_data_1)
 
 ```
 
-# 3. API advanced - Swiss venue data
-
-The same code is now used again to retrieve and plot venue data for Switzerland. The only required adjustments are the following:
-
-* Defining the country name for the ggplot2 "world" map data set (here: "Switzerland")
-* Defining the latitude and longitude boundaries to eliminate faulty location data.
-* Defining the country code used by the API (here: "CH")
+The visualization is produced with the suggested code from the assignment. Because some of the observations have faulty location data which would distort the plot, all coordinate data outside of the rectangle specified by Germany's extreme points is discarded.
 
 ```{r}
 # define country name (for ggplot "world" map data set)
@@ -219,7 +214,13 @@ ggplot() +
   theme(title = element_text(size=8, face='bold'),
     plot.caption = element_text(face = "italic"))
 ```
+# 3. API advanced - Swiss venue data
 
+The same code is now used again to retrieve and plot venue data for Switzerland. The only required adjustments are the following:
+
+* Defining the country name for the ggplot2 "world" map data set (here: "Switzerland")
+* Defining the latitude and longitude boundaries to eliminate faulty location data.
+* Defining the country code used by the API (here: "CH")
 
 
 ```{r echo = FALSE}
