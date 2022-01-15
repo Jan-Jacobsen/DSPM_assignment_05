@@ -1,5 +1,5 @@
 ---
-title: "DSPM Assignment 05"
+title: "DSPM Assignment V: GitHub and the ticketmaster.com API"
 author: "Jan Jacobsen"
 date: "1/11/2022"
 output: 
@@ -7,6 +7,17 @@ output:
     toc: true
 ---
 
+I worked together with Marvin Hoberg on parts of this assignment. I hereby assure that my submission is in line with the code of conduct outlined on the lecture slides.
+
+The public GitHub repository for this project can be accessed here:
+https://github.com/Jan-Jacobsen/DSPM_assignment_05
+
+
+# Setup
+
+Chunk settings, working directory, API key and imports
+
+Note: The ticketmaster API key is stored in a separate file (in the variable api_key) to avoid making it publicly visible on GitHub.
 
 ```{r setup}
 # set default options for code chunks
@@ -19,23 +30,21 @@ knitr::opts_knit$set(root.dir = my_path)
 # clear workspace
 rm(list = ls())
 
-
 # include api storage file 
 source("api_key_storage.r") 
 
-# if you are not the creator: set your own API key instead using the following line
+# if you are not the creator: comment out the previous line and set your own API key below instead:
 # api_key <- "your key"
 ```
 
 
-```{r}
+```{r imports}
 # imports
 if (!require("tidyverse")) install.packages("tidyverse")
 if (!require("jsonlite")) install.packages("jsonlite")
 if (!require("httr")) install.packages("httr")
 if (!require("ggplot2")) install.packages("ggplot2")
 if (!require("maps")) install.packages("maps")
-
 
 library(tidyverse)
 library(jsonlite)
@@ -44,7 +53,11 @@ library(ggplot2)
 library(maps)
 ```
 
+# 1. API basics
 
+The parameter-based ticketmaster API can be queried using ``GET()`` from the {httr}-package. I am using the {jsonlite}-package to parse the response object into an R list and save the relevant venue data in a new dataframe ``venue_data``.
+
+This first request using the url for venue search and ``"DE"`` as the country parameter returns a single "page", which only includes 20 observations at a time.
 
 ```{r api_basics}
 # retrieve german venue data (without specifiying page)
@@ -77,7 +90,18 @@ venue_data <- data.frame(
 glimpse(venue_data)
 ```
 
+
+# 2. API advanced - German venue data
+
+In order to retrieve the entire venue data set for a given country, every single page needs to be queried individually. The response object retrieved from an API query includes information about the total number of result pages for this query, which I use to define the query loop. 
+
+The data frame ``venue_data_1`` is appended repeatedly with the data of a new page until the full data set is retrieved. An issue with the API is that the structure of the response object can change based on the results. Specifically, if all 20 observations of the page have missing values in the same column (e.g. sometimes the case for latitude and longitude), the response object does not seem to include the variable at all. This needs to be taken into account when extracting the relevant data from the API response. 
+
+Ticketmaster states on their website that the free API key is valid for up to 5 requests per second. There do seem to be additional traffic surge restrictions though which can sometimes cause a "SpikeArrestViolation" error to be returned. To reliably avoid this, I set the interval between requests comfortably above the limit at 0.5s.
 ```{r api_advanced}
+# define country code for ticketmaster API
+country_code = "DE" 
+
 #get number of elements (to check later)
 total_elements <- response$page$totalElements
 
@@ -103,11 +127,11 @@ venue_data_1 <-
 # loop through pages
 for (p in start_page:(total_pages-1)){
     
-  # retrieve german venue data (without specifiying page)
+  # retrieve venue data (for a single page)
   response_1_raw <- 
     GET(
       url = "https://app.ticketmaster.com/discovery/v2/venues?",
-      query = list(countryCode = "DE",
+      query = list(countryCode = country_code,
                 locale = "*",
                 page = as.character(p), # current page
                 apikey = api_key)
@@ -138,25 +162,27 @@ for (p in start_page:(total_pages-1)){
   venue_data_1 <- venue_data_1 %>% bind_rows(df_single_page)
   
   # delay to comply with API restrictions 
-  # minimum 0.2 seconds between requests is required according to ticketmaster, 
-  # but values slightly above this limit seem to get throttled anyways before all 
-  # pages are finished. The exact restriction policy is unclear.
   Sys.sleep(0.5) 
   
   # print progress to console
   print(paste0("page ", as.character(p), " data retrieved"))
 }
 
-
 # check if all observations were retrieved
-print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
-print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_1))))
+# print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
+# print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_1))))
 
 glimpse(venue_data_1)
 
 ```
 
+# 3. API advanced - Swiss venue data
 
+The same code is now used again to retrieve and plot venue data for Switzerland. The only required adjustments are the following:
+
+* Defining the country name for the ggplot2 "world" map data set (here: "Switzerland")
+* Defining the latitude and longitude boundaries to eliminate faulty location data.
+* Defining the country code used by the API (here: "CH")
 
 ```{r}
 # define country name (for ggplot "world" map data set)
