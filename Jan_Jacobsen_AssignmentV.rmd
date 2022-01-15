@@ -314,8 +314,8 @@ for (p in start_page:(total_pages-1)){
 }
 
 # check if all observations were retrieved
-print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
-print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_2))))
+# print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
+# print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_2))))
 
 glimpse(venue_data_2)
 ```
