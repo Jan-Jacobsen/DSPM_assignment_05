@@ -165,12 +165,12 @@ for (p in start_page:(total_pages-1)){
   Sys.sleep(0.5) 
   
   # print progress to console
-  print(paste0("page ", as.character(p), " data retrieved"))
+  # print(paste0("page ", as.character(p), " data retrieved"))
 }
 
 # check if all observations were retrieved
-# print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
-# print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_1))))
+print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
+print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_1))))
 
 glimpse(venue_data_1)
 
@@ -229,7 +229,6 @@ ggplot() +
 country_code = "CH" 
 
 # retrieve single page first to get information about the total number of pages
-# retrieve german venue data (without specifiying page)
 response_2_raw <- 
   GET(
     url = "https://app.ticketmaster.com/discovery/v2/venues?",
@@ -285,9 +284,6 @@ for (p in start_page:(total_pages-1)){
   df <- response_2[["_embedded"]][["venues"]]
   
   # build (interim) df with required variables from retrieved data
-  # note: if every single row in the current page is missing a certain variable, 
-  #       the response object does not include this column. 
-  #       ifelse() clauses are used to handle these cases.
   df_single_page <- data.frame(
                       name = (if ("name" %in% names(df)) {df$name} else {NA}),
                       city = (if ("city" %in% names(df)) {df$city$name} else {NA}),
@@ -303,19 +299,16 @@ for (p in start_page:(total_pages-1)){
   venue_data_2 <- venue_data_2 %>% bind_rows(df_single_page)
   
   # delay to comply with API restrictions 
-  # minimum 0.2 seconds between requests is required according to ticketmaster, 
-  # but values slightly above this limit seem to get throttled anyways before all 
-  # pages are finished. The exact restriction policy is unclear.
   Sys.sleep(0.5) 
   
   # print progress to console
-  print(paste0("page ", as.character(p), " data retrieved"))
+  # print(paste0("page ", as.character(p), " data retrieved"))
   
 }
 
 # check if all observations were retrieved
-# print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
-# print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_2))))
+print(paste0("Total available elements according to response metadata: ", as.character(total_elements)))
+print(paste0("Rows in retrieved dataframe: ", as.character(nrow(venue_data_2))))
 
 glimpse(venue_data_2)
 ```
