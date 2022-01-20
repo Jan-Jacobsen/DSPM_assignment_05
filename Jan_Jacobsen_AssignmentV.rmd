@@ -214,6 +214,7 @@ ggplot() +
   theme(title = element_text(size=8, face='bold'),
     plot.caption = element_text(face = "italic"))
 ```
+
 # 3. API advanced - Swiss venue data
 
 The same code is now used again to retrieve and plot venue data for Switzerland. The only required adjustments are the following:
@@ -353,3 +354,15 @@ ggplot() +
     plot.caption = element_text(face = "italic"))
 ```
 
+
+
+# 4. Note on data quality
+
+The retrieved venue data sets present several issues with respect to data quality, some of which are the following:
+
+* Location data is missing for many of the observations
+* Some observations have obviously false location data (i.e. coordinates outside of country borders).
+* Some observations have nonsensical values in other columns (i.e. name, city, postalCode, ...)
+* Duplicate observations exist
+
+Except for erasing coordinate values outside of the rectangle spanned by a country's extreme points, no additional measures were taken to achieve a cleaner data set. The main issue (missing location data) is not rectifiable without consulting other data sources. For our purposes (visual representation of the location data), duplicate observations and flawed values in columns other than the location data do not present major issues, which is why I chose to leave the data set as is.
